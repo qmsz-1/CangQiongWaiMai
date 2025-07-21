@@ -24,5 +24,7 @@ public class MessageConstant {
     public static final String DISH_BE_RELATED_BY_SETMEAL = "当前菜品关联了套餐,不能删除";
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
+    public static final String NO_SETMEAL_IS_SELECTED = "没有选择要删除的套餐";
+    public static final String ILLEGAL_STATUS_VALUE = "非法状态值,必须为1或者0";
 
 }

@@ -164,13 +164,6 @@ public class DishServiceImpl implements DishService {
     @Override
     public void startOrStop(Integer status, Long id) {
 
-        Dish dish = Dish.builder()
-                .id(id)
-                .status(status)
-                .build();
-
-        dishMapper.update(dish);
-
         if (status == StatusConstant.DISABLE){
             //如果停售菜品,将包含这个菜品的套餐也停售
             List<Long> dishIds = new ArrayList<>();
@@ -187,6 +180,14 @@ public class DishServiceImpl implements DishService {
                 }
             }
         }
+
+        Dish dish = Dish.builder()
+                .id(id)
+                .status(status)
+                .build();
+
+        dishMapper.update(dish);
+
     }
 
     /**

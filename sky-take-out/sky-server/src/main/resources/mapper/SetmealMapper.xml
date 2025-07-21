@@ -4,7 +4,7 @@
 
 <mapper namespace="com.sky.mapper.SetmealMapper">
 
-    <update id="update" parameterType="Setmeal">
+    <update id="update" parameterType="com.sky.entity.Setmeal">
         update setmeal
         <set>
             <if test="name != null">name = #{name},</if>
@@ -35,7 +35,7 @@
         order by s.create_time desc
     </select>
     
-    <insert id="insert" parameterType="Setmeal" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.sky.entity.Setmeal" useGeneratedKeys="true" keyProperty="id">
         insert into setmeal(category_id, name, price, description, image, create_time, update_time, create_user, update_user)
         values
             (#{categoryId},#{name},#{price},#{description},#{image},#{createTime},#{updateTime},#{createUser},#{updateUser})

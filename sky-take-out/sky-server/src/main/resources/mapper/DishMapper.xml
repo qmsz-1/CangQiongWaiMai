@@ -26,7 +26,7 @@
         (#{name},#{categoryId},#{price},#{image},#{description},#{createTime},#{updateTime},#{createUser},#{updateUser},#{status})
     </insert>
 
-    <update id="update" parameterType="Dish">
+    <update id="update" parameterType="com.sky.entity.Dish">
         update dish
         <set>
             <if test="name != null">name = #{name},</if>
@@ -41,7 +41,7 @@
         where id = #{id}
     </update>
 
-    <select id="list" resultType="Dish" parameterType="Dish">
+    <select id="list" resultType="com.sky.entity.Dish">
         select * from dish
         <where>
             <if test="name != null">
@@ -55,6 +55,17 @@
             </if>
         </where>
         order by create_time desc
+    </select>
+
+    <select id="getBySetmealId" resultType="java.lang.Integer">
+        SELECT status
+        FROM dish
+        WHERE id IN (
+            SELECT dish_id
+            FROM setmeal_dish
+            WHERE setmeal_id = #{setmealId}
+        )
+<!-- select a.* from dish a left join setmeal_dish b on a.id = b.dish_id where b.setmeal_id = #{setmealId} -->
     </select>
 
 </mapper>

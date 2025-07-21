@@ -2,15 +2,20 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.annotation.AutoFill;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.DishDTO;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.enumeration.OperationType;
 import com.sky.exception.DeletionNotAllowedException;
+import com.sky.exception.SetmealEnableFailedException;
+import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
@@ -23,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.beancontext.BeanContext;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,6 +38,8 @@ public class SetmealServiceImpl implements SetmealService {
     private SetmealMapper setmealMapper;
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+    @Autowired
+    private DishMapper dishMapper;
 
     /**
      * 套餐分页查询
@@ -129,7 +137,7 @@ public class SetmealServiceImpl implements SetmealService {
     public void delete(List<Long> ids) {
 
         if(ids==null||ids.size()==0){
-            throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
+            throw new DeletionNotAllowedException(MessageConstant.NO_SETMEAL_IS_SELECTED);
         }
 
         //判断当前套餐是否在售
@@ -159,6 +167,27 @@ public class SetmealServiceImpl implements SetmealService {
     @Override
     public void startOrStop(Integer status, Long id) {
 
+        //如果套餐内包含未起售的菜品,则无法起售套餐
+//        if (status == StatusConstant.ENABLE){
+//            List<Dish> dishList = dishMapper.getBySetmealId(id);
+//            if (dishList != null && dishList.size() > 0){
+//                dishList.forEach(dish -> {
+//                    if(StatusConstant.DISABLE == dish.getStatus()){
+//                        throw new SetmealEnableFailedException(MessageConstant.SETMEAL_ENABLE_FAILED);
+//                    }
+//                });
+//            }
+//        }
+        if (status == StatusConstant.ENABLE) {
+            // 查询关联菜品的状态列表（仅返回status字段）
+            List<Integer> dishStatusList = dishMapper.getBySetmealId(id);
+
+            // 检查是否存在禁用状态的菜品（空集合直接返回false，无需额外判空）
+            if (dishStatusList != null && dishStatusList.contains(StatusConstant.DISABLE)) {
+                throw new SetmealEnableFailedException(MessageConstant.SETMEAL_ENABLE_FAILED);
+            }
+        }
+
         Setmeal setmeal = Setmeal.builder()
                 .id(id)
                 .status(status)
@@ -167,4 +196,5 @@ public class SetmealServiceImpl implements SetmealService {
         setmealMapper.update(setmeal);
 
     }
+
 }
