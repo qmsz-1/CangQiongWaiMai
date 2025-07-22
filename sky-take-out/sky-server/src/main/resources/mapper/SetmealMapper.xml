@@ -49,4 +49,30 @@
         delete from setmeal where id = #{id}
     </delete>
 
+    <select id="list" resultType="com.sky.entity.Setmeal" parameterType="com.sky.entity.Setmeal">
+        select * from setmeal
+        <where>
+            <if test="name != null">
+                and name like concat('%',#{name},'%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="getDishBySetmealId" resultType="com.sky.vo.DishItemVO" parameterType="java.lang.Long">
+        SELECT *
+        FROM setmeal_dish
+        WHERE setmeal_id IN (
+            SELECT id
+            FROM setmeal
+            WHERE setmeal_id = #{setmealId}
+        )
+    </select>
+
 </mapper>

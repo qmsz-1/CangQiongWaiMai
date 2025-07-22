@@ -1,4 +1,4 @@
-**/target/
+sky-pojo/target/
 .idea
 *.iml
 *.class
