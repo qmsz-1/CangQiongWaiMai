@@ -228,4 +228,13 @@ public class DishServiceImpl implements DishService {
 
         return dishVOList;
     }
+
+    @Override
+    public Dish getById(Long id) {
+        if(id == null) {
+            throw new IllegalArgumentException(MessageConstant.DISH_ID_CANNOT_BE_NULL);
+        }
+
+        return dishMapper.getById(id);
+    }
 }

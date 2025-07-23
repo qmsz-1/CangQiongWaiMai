@@ -218,4 +218,18 @@ public class SetmealServiceImpl implements SetmealService {
     public List<DishItemVO> getDishBySetmealId(Long id) {
         return setmealMapper.getDishBySetmealId(id);
     }
+
+    /**
+     * 根据分类id查询套餐
+     * @param setmealId
+     * @return
+     */
+    @Override
+    public Setmeal getById(Long setmealId) {
+        if(setmealId == null) {
+            throw new IllegalArgumentException(MessageConstant.DISH_ID_CANNOT_BE_NULL);
+        }
+
+        return setmealMapper.getById(setmealId);
+    }
 }
