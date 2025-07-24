@@ -27,5 +27,9 @@ public class MessageConstant {
     public static final String NO_SETMEAL_IS_SELECTED = "没有选择要删除的套餐";
     public static final String ILLEGAL_STATUS_VALUE = "非法状态值,必须为1或者0";
     public static final String DISH_ID_CANNOT_BE_NULL = "菜品ID不能为空";
+    public static final String SETMEAL_ID_OR_DISH_ID_CANNOT_BE_NULL = "添购物车失败，套餐ID或菜品ID不能为空";
+    public static final String CART_OPERATION_FAILED = "购物车操作失败";
+    public static final String DISH_NOT_FOUND = "菜品不存在";
+    public static final String SETMEAL_NOT_FOUND = "套餐不存在";
 
 }
