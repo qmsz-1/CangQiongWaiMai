@@ -31,5 +31,11 @@ public class MessageConstant {
     public static final String CART_OPERATION_FAILED = "购物车操作失败";
     public static final String DISH_NOT_FOUND = "菜品不存在";
     public static final String SETMEAL_NOT_FOUND = "套餐不存在";
+    public static final String ASYNCHRONOUS_ADDITION_TO_CART_FAILED = "异步添加购物车失败";
+    public static final String CLEAN_CART_FAILED = "清空购物车失败";
+    public static final String DELETE_MYSQL_CART_FAILED = "删除MySQL购物车失败";
+    public static final String THE_CART_OPERATION_IS_NOT_AVAILABLE = "购物车操作不可用";
+    public static final String SELECT_CART_FAILED = "查询购物车数据异常";
+    public static final String CLEAN_REDIS_CART_FAILED = "清空Redis购物车失败";
 
 }

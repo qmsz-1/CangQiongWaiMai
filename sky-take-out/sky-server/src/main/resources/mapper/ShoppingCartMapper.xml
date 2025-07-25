@@ -32,4 +32,22 @@
         (#{name}, #{image}, #{userId}, #{dishId}, #{setmealId}, #{dishFlavor}, #{amount}, #{createTime})
     </insert>
 
+    <delete id="deleteByUserId" parameterType="java.lang.Long">
+        DELETE FROM shopping_cart where user_id = #{userId}
+    </delete>
+
+    <delete id="deleteByUserIdAndDishIdOrSetmealId">
+        DELETE FROM shopping_cart where user_id = #{userId}
+        <if test="dishId != null">
+            AND dish_id = #{dishId}
+        </if>
+        <if test="setmealId != null">
+            AND setmeal_id = #{setmealId}
+        </if>
+    </delete>
+
+    <select id="getByUserId" resultType="com.sky.entity.ShoppingCart" parameterType="java.lang.Long">
+        select * from shopping_cart where user_id = #{userId}
+    </select>
+
 </mapper>
