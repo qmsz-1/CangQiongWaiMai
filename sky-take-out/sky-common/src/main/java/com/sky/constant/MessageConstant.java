@@ -37,5 +37,6 @@ public class MessageConstant {
     public static final String THE_CART_OPERATION_IS_NOT_AVAILABLE = "购物车操作不可用";
     public static final String SELECT_CART_FAILED = "查询购物车数据异常";
     public static final String CLEAN_REDIS_CART_FAILED = "清空Redis购物车失败";
+//    public static final String
 
 }

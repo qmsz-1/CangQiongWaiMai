@@ -62,8 +62,11 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
             throw new IllegalArgumentException(MessageConstant.SETMEAL_ID_OR_DISH_ID_CANNOT_BE_NULL);
         }
 
-        //生成redis Hash的Field(区分菜品和套餐)
-        String field = dishId != null ? "dish:" + dishId : "setmeal:" + setmealId;
+        //生成redis Hash的Field(区分菜品和套餐，以及口味)
+//        if (shoppingCartDTO.getDishFlavor() == null) {
+//            throw new IllegalArgumentException(MessageConstant.DISH_FLAVOR_CANNOT_BE_NULL);
+//        }
+        String field = buildCartField(dishId, setmealId, shoppingCartDTO.getDishFlavor());
         BoundHashOperations<String, String, Object> cartHash = redisTemplate.boundHashOps(cartKey);
 
         try {
@@ -77,8 +80,8 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
                 shoppingCart = buildShoppingCart(shoppingCartDTO, userId);
 
                 //检查MySql历史数据
-                ShoppingCart dbCart = queryDbCart(userId, dishId, setmealId);
-                shoppingCart.setNumber(dbCart != null ? dbCart.getNumber() + 1 : StatusConstant.ENABLE);
+                ShoppingCart dbCart = queryDbCart(userId, dishId, setmealId, shoppingCartDTO.getDishFlavor());
+                shoppingCart.setNumber(dbCart != null ? dbCart.getNumber() + 1 : 1);
                 cartHash.put(field, shoppingCart);
             }
             //设置过期时间
@@ -136,6 +139,10 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
 //        shoppingCartMapper.insert(shoppingCart);
     }
 
+    /**
+     * 查看购物车
+      * @return
+     */
     @Override
     public List<ShoppingCart> showShoppingCart() {
         //获得当前用户id
@@ -168,12 +175,12 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
         return carts;
     }
 
+
     /**
      * 清空购物车
      */
     @Override
-    public void cleanShoppingCart() {
-        Long userId = BaseContext.getCurrentId();
+    public void cleanShoppingCartByUserId(Long userId) {
         String cartKey = RedisKeyConstant.SHOPPING_CART_KEY + userId;
 
         try{
@@ -198,16 +205,30 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
         Long dishId = shoppingCartDTO.getDishId();
         Long setmealId = shoppingCartDTO.getSetmealId();
         String cartKey = RedisKeyConstant.SHOPPING_CART_KEY + userId;
-        String field = dishId != null ? "dish:" + dishId : "setmeal:" + setmealId;
+
+        //生成redis Hash的Field(区分菜品和套餐，以及口味)
+        String field = buildCartField(dishId, setmealId, shoppingCartDTO.getDishFlavor());
 
         try {
             //从redis中删除
             BoundHashOperations<String, String, ShoppingCart> cartHash = redisTemplate.boundHashOps(cartKey);
-            cartHash.delete(field);
-            log.info("用户{}删除购物车商品{}", userId,field);
+            ShoppingCart cartItem = cartHash.get(field);
+
+            if (cartItem != null) {
+                if (cartItem.getNumber() > 1) {
+                    //商品数量大于1，仅减少数量
+                    cartItem.setNumber(cartItem.getNumber() - 1);
+                    cartHash.put(field, cartItem);
+                    log.info("用户{}减少购物车商品{}数量，当前数量为{}", userId, field, cartItem.getNumber());
+                } else {
+                    //商品数量等于1，删除该记录
+                    cartHash.delete(field);
+                    log.info("用户{}删除购物车商品{}", userId,field);
+                }
+            }
 
             //异步删除MySQL中的购物车数据
-            asyncCartSyncService.deleteShoppingCartItem(userId, dishId, setmealId);
+            asyncCartSyncService.deleteShoppingCartItem(userId, dishId, setmealId, shoppingCartDTO.getDishFlavor());
         } catch (Exception e) {
             log.error(MessageConstant.CLEAN_REDIS_CART_FAILED);
             shoppingCartMapper.deleteByUserIdAndDishIdOrSetmealId(userId, dishId, setmealId);
@@ -224,10 +245,21 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
         Long dishId = shoppingCartDTO.getDishId();
         Long setmealId = shoppingCartDTO.getSetmealId();
 
-
         BeanUtils.copyProperties(shoppingCartDTO, cart);
         cart.setUserId(userId);
         cart.setCreateTime(LocalDateTime.now());
+
+        //查询数据库中是否有该商品数据
+        ShoppingCart dbCart = queryDbCart(userId, dishId, setmealId, shoppingCartDTO.getDishFlavor());
+        if (dbCart != null && dbCart.getId() != null) {
+            //存在,复用数据库中的id
+            cart.setId(dbCart.getId());
+        } else {
+            //不存在,设置一个临时的id
+            cart.setId(System.currentTimeMillis()); // 使用时间戳作为临时ID
+        }
+
+
         if (dishId != null) {
             Dish dish = dishMapper.getById(dishId);
             if (dish == null) {
@@ -251,13 +283,35 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
     }
 
     /**
+     * 构建购物车Redis field
+     * @param dishId 菜品ID
+     * @param setmealId 套餐ID
+     * @param dishFlavor 菜品口味
+     * @return field字符串
+     */
+    private String buildCartField(Long dishId, Long setmealId, String dishFlavor) {
+        StringBuilder fieldBuilder = new StringBuilder();
+        if (dishId != null) {
+            fieldBuilder.append("dish:").append(dishId);
+        } else {
+            fieldBuilder.append("setmeal:").append(setmealId);
+        }
+
+        //如果口味不同,做出区分
+        if (dishFlavor != null && !dishFlavor.isEmpty()) {
+            fieldBuilder.append(":flavor:").append(dishFlavor);
+        }
+        return fieldBuilder.toString();
+    }
+
+    /**
      * 从MySQL查询购物车数据
      * @param userId
      * @param dishId
      * @param setmealId
      * @return
      */
-    private ShoppingCart queryDbCart(Long userId, Long dishId, Long setmealId) {
+    private ShoppingCart queryDbCart(Long userId, Long dishId, Long setmealId, String dishFlavor) {
         ShoppingCart shoppingCart = new ShoppingCart();
         shoppingCart.setUserId(userId);
 
@@ -269,6 +323,10 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
             shoppingCart.setSetmealId(setmealId);
         }
 
+        if (dishFlavor != null && !dishFlavor.isEmpty()) {
+            shoppingCart.setDishFlavor(dishFlavor);
+        }
+
         List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
         return list.isEmpty() ? null : list.get(0);
     }
@@ -278,12 +336,13 @@ public class ShoppingCratServiceImpl implements ShoppingCartService {
      * @param carts
      */
     private void syncMySQLToRedis(List<ShoppingCart> carts, Long userId) {
-        String cartKey = String.format(RedisKeyConstant.SHOPPING_CART_KEY, userId);
+        String cartKey = RedisKeyConstant.SHOPPING_CART_KEY + userId;
         BoundHashOperations<String, String, Object> cartHash = redisTemplate.boundHashOps(cartKey);
 
         carts.forEach(cart -> {
-            String filed = cart.getDishId() != null ? "dish:" + cart.getDishId() : "setmeal:" + cart.getSetmealId();
-            cartHash.put(filed, cart);
+            //生成redis Hash的Field(区分菜品、套餐和口味)
+            String field = buildCartField(cart.getDishId(), cart.getSetmealId(), cart.getDishFlavor());
+            cartHash.put(field, cart);
         });
 
         redisTemplate.expire(cartKey, RedisKeyConstant.CART_EXPIRE_DAYS, TimeUnit.DAYS);

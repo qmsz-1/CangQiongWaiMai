@@ -43,6 +43,15 @@ public interface ShoppingCartMapper {
      * @param userId 用户ID
      */
     void deleteByUserIdAndDishIdOrSetmealId(Long userId, Long dishId, Long setmealId);
+    
+    /**
+     * 删除购物车中的某个指定口味的商品
+     * @param userId 用户ID
+     * @param dishId 菜品ID
+     * @param setmealId 套餐ID
+     * @param dishFlavor 菜品口味
+     */
+    void deleteByUserIdAndDishIdOrSetmealIdAndFlavor(Long userId, Long dishId, Long setmealId, String dishFlavor);
 
     /**
      * 根据用户ID查询购物车数据

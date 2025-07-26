@@ -30,6 +30,7 @@ public class AsyncCartSyncService {
             queryCart.setUserId(shoppingCart.getUserId());
             queryCart.setDishId(shoppingCart.getDishId());
             queryCart.setSetmealId(shoppingCart.getSetmealId());
+            queryCart.setDishFlavor(shoppingCart.getDishFlavor());
             List<ShoppingCart> list = shoppingCartMapper.list(queryCart);
 
             if(!list.isEmpty()) {
@@ -67,6 +68,45 @@ public class AsyncCartSyncService {
         try {
             shoppingCartMapper.deleteByUserIdAndDishIdOrSetmealId(userId, dishId, setmealId);
             log.info("删除用户ID为 {} 的购物车中的商品成功", userId);
+        } catch (Exception e) {
+            log.error(MessageConstant.DELETE_MYSQL_CART_FAILED, e);
+        }
+    }
+    
+    /**
+     * 异步删除购物车中的某个商品(支持口味区分)
+     */
+    public void deleteShoppingCartItem(Long userId, Long dishId, Long setmealId, String dishFlavor) {
+        try {
+            // 查询要操作的购物车项
+            ShoppingCart queryCart = new ShoppingCart();
+            queryCart.setUserId(userId);
+            if (dishId != null) {
+                queryCart.setDishId(dishId);
+            }
+
+            if (setmealId != null) {
+                queryCart.setSetmealId(setmealId);
+            }
+            
+            if (dishFlavor != null) {
+                queryCart.setDishFlavor(dishFlavor);
+            }
+
+            List<ShoppingCart> list = shoppingCartMapper.list(queryCart);
+            if (!list.isEmpty()) {
+                ShoppingCart cart = list.get(0);
+                // 如果数量大于1，则减少数量
+                if (cart.getNumber() > 1) {
+                    cart.setNumber(cart.getNumber() - 1);
+                    shoppingCartMapper.updateNumberById(cart);
+                    log.info("减少用户ID为 {} 的购物车中商品数量成功，当前数量: {}", userId, cart.getNumber());
+                } else {
+                    // 如果数量为1，则删除该项
+                    shoppingCartMapper.deleteByUserIdAndDishIdOrSetmealIdAndFlavor(userId, dishId, setmealId, dishFlavor);
+                    log.info("删除用户ID为 {} 的购物车中的商品成功", userId);
+                }
+            }
         } catch (Exception e) {
             log.error(MessageConstant.DELETE_MYSQL_CART_FAILED, e);
         }

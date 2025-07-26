@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.sky.mapper.AddressBookMapper">
+
+    <insert id="insert" parameterType="com.sky.entity.AddressBook">
+        insert into address_book (user_id, consignee, sex, phone, province_code, province_name, city_code, city_name, district_code, district_name, detail, label)
+        values
+        (#{userId}, #{consignee}, #{sex}, #{phone}, #{provinceCode}, #{provinceName}, #{cityCode}, #{cityName}, #{districtCode}, #{districtName}, #{detail}, #{label})
+    </insert>
+
+    <select id="getByUserId" resultType="com.sky.entity.AddressBook" parameterType="java.lang.Long">
+        select * from address_book where user_id = #{userId}
+    </select>
+
+    <update id="updateAllDefault" parameterType="com.sky.entity.AddressBook">
+        update address_book set is_default = #{isDefault} where user_id = #{userId}
+    </update>
+
+    <update id="updateDefaultAddress" parameterType="com.sky.entity.AddressBook">
+        update address_book
+        <set>
+            <if test="isDefault != null">
+                is_default = #{isDefault},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="getDefaultAddress" resultType="com.sky.entity.AddressBook" parameterType="com.sky.entity.AddressBook">
+        select * from address_book where user_id = #{userId} and is_default = #{isDefault}
+    </select>
+
+</mapper>
+
+
+

@@ -1,6 +1,7 @@
 package com.sky.controller.user;
 
 
+import com.sky.context.BaseContext;
 import com.sky.dto.ShoppingCartDTO;
 import com.sky.entity.ShoppingCart;
 import com.sky.result.Result;
@@ -21,6 +22,7 @@ public class ShoppingCartController {
 
     @Autowired
     private ShoppingCartService shoppingCartService;
+
 
 
     /**
@@ -56,7 +58,8 @@ public class ShoppingCartController {
     @ApiOperation("清空购物车")
     public Result Clean() {
         log.info("清空购物车");
-        shoppingCartService.cleanShoppingCart();
+        Long userId = BaseContext.getCurrentId();
+        shoppingCartService.cleanShoppingCartByUserId(userId);
         return Result.success();
     }
 

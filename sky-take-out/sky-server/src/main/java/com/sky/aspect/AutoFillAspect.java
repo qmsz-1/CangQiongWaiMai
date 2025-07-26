@@ -57,32 +57,65 @@ public class AutoFillAspect {
         if(operationType == OperationType.INSERT){
             //为4个公共字段赋值
             try {
-                Method setCreateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
-                Method setCreateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_USER, Long.class);
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+                // 检查并调用 setCreateTime 方法
+                Method setCreateTime = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
+                if (setCreateTime != null) {
+                    setCreateTime.invoke(entity, now);
+                }
 
-                //通过反射为对象属性赋值
-                setCreateTime.invoke(entity,now);
-                setCreateUser.invoke(entity,currentId);
-                setUpdateTime.invoke(entity,now);
-                setUpdateUser.invoke(entity,currentId);
+                // 检查并调用 setCreateUser 方法
+                Method setCreateUser = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_CREATE_USER, Long.class);
+                if (setCreateUser != null) {
+                    setCreateUser.invoke(entity, currentId);
+                }
+
+                // 检查并调用 setUpdateTime 方法
+                Method setUpdateTime = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+                if (setUpdateTime != null) {
+                    setUpdateTime.invoke(entity, now);
+                }
+
+                // 检查并调用 setUpdateUser 方法
+                Method setUpdateUser = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_UPDATE_USER, Long.class);
+                if (setUpdateUser != null) {
+                    setUpdateUser.invoke(entity, currentId);
+                }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("自动填充字段时发生异常", e);
             }
         }else if(operationType == OperationType.UPDATE){
             //为2个公共字段赋值
             try {
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+                // 检查并调用 setUpdateTime 方法
+                Method setUpdateTime = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
+                if (setUpdateTime != null) {
+                    setUpdateTime.invoke(entity, now);
+                }
 
-                //通过反射为对象属性赋值
-                setUpdateTime.invoke(entity,now);
-                setUpdateUser.invoke(entity,currentId);
+                // 检查并调用 setUpdateUser 方法
+                Method setUpdateUser = getMethodIfExists(entity.getClass(), AutoFillConstant.SET_UPDATE_USER, Long.class);
+                if (setUpdateUser != null) {
+                    setUpdateUser.invoke(entity, currentId);
+                }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("自动填充更新字段时发生异常", e);
             }
         }
     }
-}
 
+    /**
+     * 检查类中是否存在指定方法，如果存在则返回Method对象，否则返回null
+     * @param clazz 类对象
+     * @param methodName 方法名
+     * @param parameterTypes 参数类型
+     * @return Method对象或null
+     */
+    private Method getMethodIfExists(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+        try {
+            return clazz.getDeclaredMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            log.debug("方法 {} 不存在于类 {} 中", methodName, clazz.getSimpleName());
+            return null;
+        }
+    }
+}
